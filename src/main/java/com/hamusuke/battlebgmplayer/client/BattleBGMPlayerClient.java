@@ -24,8 +24,6 @@ import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.Random;
@@ -34,7 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @SideOnly(Side.CLIENT)
 public final class BattleBGMPlayerClient {
-    public static final Logger LOGGER = LogManager.getLogger();
     private static final int RESUME_MUSIC_TICKS = 200;
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static BattleBGMPlayerClient INSTANCE;
