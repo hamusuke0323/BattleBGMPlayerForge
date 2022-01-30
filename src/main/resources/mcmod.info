@@ -1,0 +1,18 @@
+[
+  {
+    "modid": "${mod_id}",
+    "name": "${mod_name}",
+    "description": "${mod_description}",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "",
+    "updateUrl": "",
+    "authorList": [
+      "hamusuke2303"
+    ],
+    "credits": "Thank you for downloading this mod!",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]
