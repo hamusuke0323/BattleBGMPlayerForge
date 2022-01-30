@@ -75,13 +75,18 @@ public abstract class SoundManagerMixin implements SoundManagerInvoker {
     @Override
     public final SoundSystem getSoundSystem() {
         try {
-            Field sndSystem = ((SoundManager) (Object) this).getClass().getDeclaredField("sndSystem");
+            Field sndSystem = ((SoundManager) (Object) this).getClass().getDeclaredField("field_148620_e");
             sndSystem.setAccessible(true);
             return (SoundSystem) sndSystem.get(this);
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            LOGGER.error("Error occurred while getting private field, will crash.", e);
+            try {
+                Field sndSystem = ((SoundManager) (Object) this).getClass().getDeclaredField("sndSystem");
+                sndSystem.setAccessible(true);
+                return (SoundSystem) sndSystem.get(this);
+            } catch (NoSuchFieldException | IllegalAccessException ex) {
+                LOGGER.error("Error occurred while getting private field, will crash.", ex);
+                return null;
+            }
         }
-
-        return null;
     }
 }
