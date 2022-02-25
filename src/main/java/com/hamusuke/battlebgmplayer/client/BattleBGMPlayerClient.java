@@ -44,7 +44,6 @@ public final class BattleBGMPlayerClient {
     private BattleSound currentBattleMusic;
     private int chooseNextTicks;
     private int startResumeMusicTicks;
-    private int tickCount;
 
     private BattleBGMPlayerClient() {
         INSTANCE = this;
