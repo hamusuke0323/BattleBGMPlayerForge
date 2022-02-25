@@ -14,6 +14,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Collections;
+import java.util.List;
+
 @Mixin(EntityLiving.class)
 public abstract class EntityLivingMixin extends EntityLivingBase {
     @Nullable
@@ -28,16 +31,33 @@ public abstract class EntityLivingMixin extends EntityLivingBase {
         super.onDeath(cause);
 
         if (!this.world.isRemote && this.getServer() != null) {
-            MobSetTargetPlayerS2CPacket packet = new MobSetTargetPlayerS2CPacket(false, (EntityLiving) (Object) this);
-            this.getServer().getPlayerList().getPlayers().forEach(entityPlayerMP -> NetworkManager.sendToClient(packet, entityPlayerMP));
+            this.sendToClient(false, this.getServer().getPlayerList().getPlayers());
         }
     }
 
     @Inject(method = "setAttackTarget", at = @At("TAIL"))
     private void setTarget(@Nullable EntityLivingBase target, CallbackInfo ci) {
-        if (target instanceof EntityPlayerMP && !target.equals(this.currentTargetedPlayer) && !this.world.isRemote) {
-            this.currentTargetedPlayer = (EntityPlayerMP) target;
-            NetworkManager.sendToClient(new MobSetTargetPlayerS2CPacket(true, (EntityLiving) (Object) this), this.currentTargetedPlayer);
+        if (!this.world.isRemote && this.getServer() != null) {
+            if (target instanceof EntityPlayerMP && !target.equals(this.currentTargetedPlayer)) {
+                if (this.currentTargetedPlayer != null) {
+                    this.sendToClient(false, this.currentTargetedPlayer);
+                }
+
+                this.currentTargetedPlayer = (EntityPlayerMP) target;
+                this.sendToClient(true, this.currentTargetedPlayer);
+            } else if (target == null && this.currentTargetedPlayer != null) {
+                this.currentTargetedPlayer = null;
+                this.sendToClient(false, this.getServer().getPlayerList().getPlayers());
+            }
         }
+    }
+
+    private void sendToClient(boolean start, EntityPlayerMP target) {
+        this.sendToClient(start, Collections.singletonList(target));
+    }
+
+    private void sendToClient(boolean start, List<EntityPlayerMP> targets) {
+        MobSetTargetPlayerS2CPacket packet = new MobSetTargetPlayerS2CPacket(start, (EntityLiving) (Object) this);
+        targets.forEach(entityPlayerMP -> NetworkManager.sendToClient(packet, entityPlayerMP));
     }
 }

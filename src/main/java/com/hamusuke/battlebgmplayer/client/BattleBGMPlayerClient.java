@@ -44,6 +44,7 @@ public final class BattleBGMPlayerClient {
     private BattleSound currentBattleMusic;
     private int chooseNextTicks;
     private int startResumeMusicTicks;
+    private int tickCount;
 
     private BattleBGMPlayerClient() {
         INSTANCE = this;
@@ -58,7 +59,7 @@ public final class BattleBGMPlayerClient {
             if (entity instanceof EntityLiving) {
                 EntityLiving mob = (EntityLiving) entity;
                 if (packet.isStart()) {
-                    if (this.mobs.add(mob) && !this.started.get()) {
+                    if (this.mobs.add(mob) && !this.isDuringBattle()) {
                         this.play(mob);
                     }
                 } else {
@@ -70,13 +71,13 @@ public final class BattleBGMPlayerClient {
     }
 
     private void stopIfPlayerIsNotTargeted() {
-        if (this.mobs.isEmpty() && this.started.get()) {
+        if (this.mobs.isEmpty() && this.isDuringBattle()) {
             this.stop();
         }
     }
 
     private void play(EntityLiving mob) {
-        if (!this.started.get()) {
+        if (!this.isDuringBattle()) {
             if (this.currentBattleMusic != null && this.getSoundEngineInvoker().isStopped(this.currentBattleMusic)) {
                 this.currentBattleMusic = null;
             }
@@ -114,6 +115,7 @@ public final class BattleBGMPlayerClient {
     }
 
     private void pauseCurrentMusic() {
+        this.startResumeMusicTicks = 0;
         this.currentMusic = ((MusicTickerInvoker) mc.getMusicTicker()).getCurrentMusic();
         if (this.currentMusic != null && mc.getSoundHandler().isSoundPlaying(this.currentMusic)) {
             this.getSoundEngineInvoker().pause(this.currentMusic);
@@ -121,7 +123,7 @@ public final class BattleBGMPlayerClient {
     }
 
     private void stop() {
-        if (this.started.get()) {
+        if (this.isDuringBattle()) {
             this.started.set(false);
             if (this.currentBattleMusic != null) {
                 this.currentBattleMusic.pause();
@@ -148,7 +150,7 @@ public final class BattleBGMPlayerClient {
 
     @SubscribeEvent
     public void onPlaySound(final PlaySoundEvent event) {
-        if (this.started.get() && event.getSound().getCategory() == SoundCategory.MUSIC) {
+        if (this.isDuringBattle() && event.getSound().getCategory() == SoundCategory.MUSIC) {
             event.setResultSound(null);
         }
     }
@@ -178,7 +180,7 @@ public final class BattleBGMPlayerClient {
 
             if (this.startResumeMusicTicks > 0) {
                 this.startResumeMusicTicks--;
-                if (this.startResumeMusicTicks <= 0 && this.currentMusic != null) {
+                if (!this.isDuringBattle() && this.startResumeMusicTicks <= 0 && this.currentMusic != null) {
                     this.getSoundEngineInvoker().resume(this.currentMusic);
                 }
             }
