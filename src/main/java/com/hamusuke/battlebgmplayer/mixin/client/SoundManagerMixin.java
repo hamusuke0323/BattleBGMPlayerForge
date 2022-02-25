@@ -42,7 +42,6 @@ public abstract class SoundManagerMixin implements SoundManagerInvoker {
     @Override
     public final void stop(ISound soundInstance) {
         this.stopSound(soundInstance);
-        this.invPlayingSounds.remove(soundInstance);
     }
 
     @Override
@@ -84,7 +83,7 @@ public abstract class SoundManagerMixin implements SoundManagerInvoker {
                 sndSystem.setAccessible(true);
                 return (SoundSystem) sndSystem.get(this);
             } catch (NoSuchFieldException | IllegalAccessException ex) {
-                LOGGER.error("Error occurred while getting private field, will crash.", ex);
+                LOGGER.error("Error occurred while getting private field, Minecraft will crash.", ex);
                 return null;
             }
         }

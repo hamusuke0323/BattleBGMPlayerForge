@@ -11,6 +11,7 @@ import net.minecraft.client.audio.SoundHandler;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.fml.common.registry.EntityRegistry;
@@ -59,47 +60,41 @@ public final class BattleSoundManager {
         ResourceLocation resourceLocation2 = this.byWorld.get(worldId);
 
         if (resourceLocation != null) {
-            this.isNotCurrentSoundDefault = true;
-            if (current != null && entityName.equals(this.previousEntity)) {
+            if (current != null && entityName != null && entityName.equals(this.previousEntity)) {
                 return current;
             }
 
-            this.previousEntity = entityName;
-            this.previousBiome = biomeName;
-            this.previousWorld = worldId;
+            this.substitute(true, entityName, biomeName, worldId);
             return new BattleSound(resourceLocation);
         } else if (resourceLocation1 != null) {
-            this.isNotCurrentSoundDefault = true;
-            if (current != null && biomeName.equals(this.previousBiome)) {
+            if (current != null && biomeName != null && biomeName.equals(this.previousBiome)) {
                 return current;
             }
 
-            this.previousEntity = entityName;
-            this.previousBiome = biomeName;
-            this.previousWorld = worldId;
+            this.substitute(true, entityName, biomeName, worldId);
             return new BattleSound(resourceLocation1);
         } else if (resourceLocation2 != null) {
-            this.isNotCurrentSoundDefault = true;
             if (current != null && worldId == this.previousWorld) {
                 return current;
             }
 
-            this.previousEntity = entityName;
-            this.previousBiome = biomeName;
-            this.previousWorld = worldId;
+            this.substitute(true, entityName, biomeName, worldId);
             return new BattleSound(resourceLocation2);
         } else {
-            this.previousEntity = entityName;
-            this.previousBiome = biomeName;
-            this.previousWorld = worldId;
-
             if (!this.isNotCurrentSoundDefault && current != null) {
                 return current;
             }
 
-            this.isNotCurrentSoundDefault = false;
+            this.substitute(false, entityName, biomeName, worldId);
             return new BattleSound(this.defaultSound);
         }
+    }
+
+    private void substitute(boolean isNotCurrentSoundDefault, ResourceLocation previousEntity, ResourceLocation previousBiome, int previousWorld) {
+        this.isNotCurrentSoundDefault = isNotCurrentSoundDefault;
+        this.previousEntity = previousEntity;
+        this.previousBiome = previousBiome;
+        this.previousWorld = previousWorld;
     }
 
     private void clearAll() {
@@ -123,7 +118,7 @@ public final class BattleSoundManager {
                     this.defaultSound = new ResourceLocation(jsonObject.get("defaultSound").getAsString());
                 }
                 if (jsonObject.has("byWorld")) {
-                    jsonObject.getAsJsonObject("byWorld").entrySet().forEach(entry -> this.byWorld.put(Integer.parseInt(entry.getKey()), new ResourceLocation(entry.getValue().getAsString())));
+                    jsonObject.getAsJsonObject("byWorld").entrySet().forEach(entry -> this.byWorld.put(MathHelper.getInt(entry.getKey(), 0), new ResourceLocation(entry.getValue().getAsString())));
                 }
                 forEachIfHasKey(jsonObject, "byBiome", this.byBiome::put);
                 forEachIfHasKey(jsonObject, "byEntity", this.byEntity::put);

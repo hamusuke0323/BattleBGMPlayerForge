@@ -3,10 +3,13 @@
   "minVersion": "0.8",
   "package": "com.hamusuke.battlebgmplayer.mixin",
   "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "EntityLivingMixin"
+  ],
   "client": [
     "client.MusicTickerMixin",
-    "client.SoundManagerMixin",
-    "client.SoundHandlerMixin"
+    "client.SoundHandlerMixin",
+    "client.SoundManagerMixin"
   ],
   "refmap": "mixins.battlebgmplayer.refmap.json"
 }

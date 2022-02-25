@@ -17,7 +17,6 @@ import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
-import net.minecraftforge.client.event.sound.SoundLoadEvent;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
@@ -32,12 +31,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @SideOnly(Side.CLIENT)
 public final class BattleBGMPlayerClient {
-    private static final int RESUME_MUSIC_TICKS = 200;
+    private static final int RESUME_MUSIC_TICKS = 100;
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static BattleBGMPlayerClient INSTANCE;
     private static final Random RANDOM = new Random();
     private final Set<EntityLiving> mobs = Sets.newConcurrentHashSet();
-    private int tick;
     private final AtomicBoolean started = new AtomicBoolean();
     private final BattleSoundManager battleSoundManager;
     @Nullable
@@ -65,8 +63,15 @@ public final class BattleBGMPlayerClient {
                     }
                 } else {
                     this.mobs.remove(mob);
+                    this.stopIfPlayerIsNotTargeted();
                 }
             }
+        }
+    }
+
+    private void stopIfPlayerIsNotTargeted() {
+        if (this.mobs.isEmpty() && this.started.get()) {
+            this.stop();
         }
     }
 
@@ -93,8 +98,6 @@ public final class BattleBGMPlayerClient {
             }
 
             if (!this.currentBattleMusic.getSoundLocation().equals(SoundHandler.MISSING_SOUND.getSoundLocation()) && ((SoundHandlerInvoker) mc.getSoundHandler()).getSoundRegistry().containsKey(this.currentBattleMusic.getSoundLocation())) {
-                this.pauseCurrentMusic();
-
                 if (!battleMusicChanged) {
                     if (this.currentBattleMusic.isVolumeZero()) {
                         this.getSoundEngineInvoker().resume(this.currentBattleMusic);
@@ -103,7 +106,9 @@ public final class BattleBGMPlayerClient {
                 } else {
                     mc.getSoundHandler().playSound(this.currentBattleMusic);
                 }
+
                 this.started.set(true);
+                this.pauseCurrentMusic();
             }
         }
     }
@@ -122,7 +127,7 @@ public final class BattleBGMPlayerClient {
                 this.currentBattleMusic.pause();
             }
             this.startResumeMusicTicks = RESUME_MUSIC_TICKS;
-            this.chooseNextTicks = MathHelper.getInt(RANDOM, 200, 1200);
+            this.chooseNextTicks = MathHelper.getInt(RANDOM, 600, 2400);
         }
     }
 
@@ -137,22 +142,7 @@ public final class BattleBGMPlayerClient {
         this.chooseNextTicks = 0;
     }
 
-    private void check() {
-        synchronized (this.mobs) {
-            this.mobs.removeIf(mob -> !mob.isEntityAlive());
-        }
-
-        if (this.isDuringBattle()) {
-            this.pauseCurrentMusic();
-        }
-
-        if (this.mobs.isEmpty() && this.started.get()) {
-            this.stop();
-        }
-    }
-
-    @SubscribeEvent
-    public void onSoundLoad(final SoundLoadEvent event) {
+    public void reloadBattleSoundManager() {
         this.battleSoundManager.load();
     }
 
@@ -178,11 +168,6 @@ public final class BattleBGMPlayerClient {
     @SubscribeEvent
     public void onTickEnd(final TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            if (this.tick++ >= 20) {
-                this.tick = 0;
-                this.check();
-            }
-
             if (this.currentBattleMusic != null && this.currentBattleMusic.isVolumeZero()) {
                 this.getSoundEngineInvoker().pause(this.currentBattleMusic);
             }

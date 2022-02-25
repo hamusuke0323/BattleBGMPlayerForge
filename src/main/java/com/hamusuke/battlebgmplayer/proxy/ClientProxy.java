@@ -4,7 +4,6 @@ import com.hamusuke.battlebgmplayer.client.BattleBGMPlayerClient;
 import com.hamusuke.battlebgmplayer.network.MobSetTargetPlayerS2CPacket;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -18,8 +17,7 @@ public final class ClientProxy extends CommonProxy {
     }
 
     @Override
-    public IMessage onMessage(MobSetTargetPlayerS2CPacket packet, MessageContext context) {
+    public void onMessage(MobSetTargetPlayerS2CPacket packet, MessageContext context) {
         BattleBGMPlayerClient.getInstance().handle(packet);
-        return null;
     }
 }

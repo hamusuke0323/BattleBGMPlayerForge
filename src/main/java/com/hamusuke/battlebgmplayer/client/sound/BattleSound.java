@@ -15,7 +15,7 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
     protected final UUID uuid = UUID.randomUUID();
     protected boolean stopped;
     protected boolean paused;
-    protected int fade = 100;
+    protected int fade = 40;
 
     public BattleSound(ResourceLocation p_119587_) {
         super(p_119587_, SoundCategory.MUSIC);
@@ -47,10 +47,10 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
     public void update() {
         if (this.paused && this.fade > 0) {
             this.fade--;
-            this.volume = MathHelper.clamp(this.fade * 0.01F, 0.0F, 1.0F);
-        } else if (!this.paused && this.fade < 100) {
+            this.volume = MathHelper.clamp(this.fade * 0.025F, 0.0F, 1.0F);
+        } else if (!this.paused && this.fade < 40) {
             this.fade++;
-            this.volume = MathHelper.clamp(this.fade * 0.01F, 0.0F, 1.0F);
+            this.volume = MathHelper.clamp(this.fade * 0.025F, 0.0F, 1.0F);
         }
     }
 

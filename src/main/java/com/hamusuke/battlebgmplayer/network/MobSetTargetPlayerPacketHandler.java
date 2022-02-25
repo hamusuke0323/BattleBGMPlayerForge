@@ -8,6 +8,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 public final class MobSetTargetPlayerPacketHandler implements IMessageHandler<MobSetTargetPlayerS2CPacket, IMessage> {
     @Override
     public IMessage onMessage(MobSetTargetPlayerS2CPacket message, MessageContext ctx) {
-        return BattleBGMPlayer.PROXY.onMessage(message, ctx);
+        BattleBGMPlayer.PROXY.onMessage(message, ctx);
+        return null;
     }
 }
