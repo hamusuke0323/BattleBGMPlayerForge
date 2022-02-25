@@ -54,10 +54,6 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
         }
     }
 
-    public boolean isPaused() {
-        return this.paused;
-    }
-
     public boolean isVolumeZero() {
         return this.paused && this.fade <= 0;
     }
