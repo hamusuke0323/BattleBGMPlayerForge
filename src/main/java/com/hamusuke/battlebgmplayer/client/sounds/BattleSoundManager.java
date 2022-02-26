@@ -5,8 +5,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hamusuke.battlebgmplayer.client.sound.BattleSound;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import net.minecraft.client.audio.SoundHandler;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLiving;
@@ -33,7 +33,7 @@ public final class BattleSoundManager {
     private static final Logger LOGGER = LogManager.getLogger();
     private final File config;
     private ResourceLocation defaultSound = SoundHandler.MISSING_SOUND.getSoundLocation();
-    private final Int2ObjectMap<ResourceLocation> byWorld = Int2ObjectMaps.emptyMap();
+    private final Int2ObjectMap<ResourceLocation> byWorld = new Int2ObjectArrayMap<>();
     private final Map<ResourceLocation, ResourceLocation> byBiome = Maps.newHashMap();
     private final Map<ResourceLocation, ResourceLocation> byEntity = Maps.newHashMap();
     private int previousWorld;
