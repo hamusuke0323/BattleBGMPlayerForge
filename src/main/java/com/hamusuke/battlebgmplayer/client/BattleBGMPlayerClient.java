@@ -187,7 +187,7 @@ public final class BattleBGMPlayerClient {
                 }
 
                 if (!this.mobs.isEmpty()) {
-                    this.mobs.removeIf(entityLiving -> !entityLiving.isEntityAlive());
+                    this.mobs.removeIf(entityLiving -> entityLiving.dimension != mc.player.dimension || !entityLiving.isEntityAlive());
                     this.stopIfPlayerIsNotTargeted();
                 }
             }
