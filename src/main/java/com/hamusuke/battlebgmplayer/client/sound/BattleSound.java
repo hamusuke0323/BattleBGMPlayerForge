@@ -16,6 +16,7 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
     protected boolean stopped;
     protected boolean paused;
     protected int fade = 40;
+    protected boolean pauseRequested;
 
     public BattleSound(ResourceLocation p_119587_) {
         super(p_119587_, SoundCategory.MUSIC);
@@ -36,6 +37,7 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
     @Override
     public void resume() {
         this.paused = false;
+        this.pauseRequested = false;
     }
 
     @Override
@@ -56,6 +58,14 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
 
     public boolean isVolumeZero() {
         return this.paused && this.fade <= 0;
+    }
+
+    public boolean isPauseRequested() {
+        return this.pauseRequested;
+    }
+
+    public void setPauseRequested(boolean pauseRequested) {
+        this.pauseRequested = pauseRequested;
     }
 
     @Override

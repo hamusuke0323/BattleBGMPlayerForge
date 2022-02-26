@@ -41,9 +41,12 @@ public final class BattleBGMPlayerClient {
     @Nullable
     private ISound currentMusic;
     @Nullable
+    private EntityLiving recentMob;
+    @Nullable
     private BattleSound currentBattleMusic;
     private int chooseNextTicks;
     private int startResumeMusicTicks;
+    private int tickCount;
 
     private BattleBGMPlayerClient() {
         INSTANCE = this;
@@ -58,8 +61,12 @@ public final class BattleBGMPlayerClient {
             if (entity instanceof EntityLiving) {
                 EntityLiving mob = (EntityLiving) entity;
                 if (packet.isStart()) {
-                    if (this.mobs.add(mob) && !this.isDuringBattle()) {
-                        this.play(mob);
+                    if (this.mobs.add(mob)) {
+                        this.recentMob = mob;
+
+                        if (!this.isDuringBattle()) {
+                            this.play(this.recentMob);
+                        }
                     }
                 } else {
                     this.mobs.remove(mob);
@@ -67,6 +74,10 @@ public final class BattleBGMPlayerClient {
                 }
             }
         }
+    }
+
+    private boolean shouldPlayBattleMusic() {
+        return this.isDuringBattle() && (this.currentBattleMusic == null || this.getSoundEngineInvoker().isStopped(this.currentBattleMusic));
     }
 
     private void stopIfPlayerIsNotTargeted() {
@@ -132,7 +143,7 @@ public final class BattleBGMPlayerClient {
         }
     }
 
-    private void stopAll() {
+    public void stopAll() {
         this.stop();
 
         if (this.currentBattleMusic != null) {
@@ -141,6 +152,7 @@ public final class BattleBGMPlayerClient {
 
         this.currentBattleMusic = null;
         this.chooseNextTicks = 0;
+        this.mobs.clear();
     }
 
     public void reloadBattleSoundManager() {
@@ -156,21 +168,33 @@ public final class BattleBGMPlayerClient {
 
     @SubscribeEvent
     public void onLoggedIn(final PlayerEvent.PlayerLoggedInEvent event) {
-        this.mobs.clear();
         this.stopAll();
     }
 
     @SubscribeEvent
     public void onLoggedOut(final PlayerEvent.PlayerLoggedOutEvent event) {
-        this.mobs.clear();
         this.stopAll();
     }
 
     @SubscribeEvent
     public void onTickEnd(final TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            if (this.currentBattleMusic != null && this.currentBattleMusic.isVolumeZero()) {
+            if (this.tickCount++ >= 20) {
+                this.tickCount = 0;
+
+                if (this.recentMob != null && this.recentMob.isEntityAlive() && this.shouldPlayBattleMusic()) {
+                    this.play(this.recentMob);
+                }
+
+                if (!this.mobs.isEmpty()) {
+                    this.mobs.removeIf(entityLiving -> !entityLiving.isEntityAlive());
+                    this.stopIfPlayerIsNotTargeted();
+                }
+            }
+
+            if (this.currentBattleMusic != null && !this.currentBattleMusic.isPauseRequested() && this.currentBattleMusic.isVolumeZero()) {
                 this.getSoundEngineInvoker().pause(this.currentBattleMusic);
+                this.currentBattleMusic.setPauseRequested(true);
             }
 
             if (this.chooseNextTicks > 0) {

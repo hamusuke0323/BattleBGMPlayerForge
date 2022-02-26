@@ -7,6 +7,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -67,7 +68,7 @@ public abstract class SoundManagerMixin implements SoundManagerInvoker {
     }
 
     @Override
-    public final boolean isStopped(ISound soundInstance) {
+    public final boolean isStopped(@NotNull ISound soundInstance) {
         return !this.playingSounds.containsValue(soundInstance) || !this.invPlayingSounds.containsKey(soundInstance);
     }
 
