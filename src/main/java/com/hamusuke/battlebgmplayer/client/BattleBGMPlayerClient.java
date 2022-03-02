@@ -1,5 +1,6 @@
 package com.hamusuke.battlebgmplayer.client;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.hamusuke.battlebgmplayer.BattleBGMPlayer;
 import com.hamusuke.battlebgmplayer.client.sound.BattleSound;
@@ -216,6 +217,10 @@ public final class BattleBGMPlayerClient {
 
     private SoundManagerInvoker getSoundEngineInvoker() {
         return ((SoundHandlerInvoker) mc.getSoundHandler()).getSoundManagerInvoker();
+    }
+
+    public ImmutableSet<EntityLiving> getImmutableMobs() {
+        return ImmutableSet.copyOf(this.mobs);
     }
 
     public static BattleBGMPlayerClient getInstance() {

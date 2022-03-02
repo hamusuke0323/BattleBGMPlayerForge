@@ -20,8 +20,9 @@ public class ConfigScreen extends GuiScreen {
     public void initGui() {
         super.initGui();
 
-        this.addButton(new GuiButton(0, this.width / 4, this.height / 2 - 20, this.width / 2, 20, "Reload config"));
-        this.addButton(new GuiButton(2, this.width / 4, this.height / 2, this.width / 2, 20, "Stop playing battle music"));
+        this.addButton(new GuiButton(0, this.width / 4, this.height / 2 - 30, this.width / 2, 20, "Reload Config"));
+        this.addButton(new GuiButton(2, this.width / 4, this.height / 2 - 10, this.width / 2, 20, "Stop Playing Battle Music"));
+        this.addButton(new GuiButton(3, this.width / 4, this.height / 2 + 10, this.width / 2, 20, "Display Debug Screen"));
         this.addButton(new GuiButton(1, this.width / 4, this.height - 20, this.width / 2, 20, I18n.format("gui.done")));
     }
 
@@ -42,6 +43,9 @@ public class ConfigScreen extends GuiScreen {
                 break;
             case 2:
                 BattleBGMPlayerClient.getInstance().stopAll();
+                break;
+            case 3:
+                this.mc.displayGuiScreen(new DebugScreen(this));
                 break;
         }
     }
