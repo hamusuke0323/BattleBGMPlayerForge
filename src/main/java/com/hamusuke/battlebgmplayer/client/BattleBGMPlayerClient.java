@@ -17,6 +17,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -161,8 +162,13 @@ public final class BattleBGMPlayerClient {
     }
 
     @SubscribeEvent
+    public void onRenderWorld(final RenderWorldLastEvent event) {
+
+    }
+
+    @SubscribeEvent
     public void onPlaySound(final PlaySoundEvent event) {
-        if (this.isDuringBattle() && event.getSound().getCategory() == SoundCategory.MUSIC) {
+        if (this.isDuringBattle() && this.currentBattleMusic != null && mc.getSoundHandler().isSoundPlaying(this.currentBattleMusic) && event.getSound().getCategory() == SoundCategory.MUSIC) {
             event.setResultSound(null);
         }
     }

@@ -47,7 +47,7 @@ public class DebugScreen extends GuiScreen {
         private final List<Entry> entries = Lists.newArrayList();
 
         public TargetingMobsList() {
-            super(DebugScreen.this.mc, DebugScreen.this.width, DebugScreen.this.height, 0, DebugScreen.this.height - 20, 10);
+            super(DebugScreen.this.mc, DebugScreen.this.width, DebugScreen.this.height, 20, DebugScreen.this.height - 20, 10);
             this.entries.addAll(BattleBGMPlayerClient.getInstance().getImmutableMobs().stream().map(Entry::new).collect(Collectors.toList()));
         }
 
