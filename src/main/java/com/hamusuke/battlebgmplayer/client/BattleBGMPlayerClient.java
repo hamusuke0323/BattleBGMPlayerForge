@@ -3,6 +3,7 @@ package com.hamusuke.battlebgmplayer.client;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.hamusuke.battlebgmplayer.BattleBGMPlayer;
+import com.hamusuke.battlebgmplayer.client.renderer.DirectionIndicatorRenderer;
 import com.hamusuke.battlebgmplayer.client.sound.BattleSound;
 import com.hamusuke.battlebgmplayer.client.sounds.BattleSoundManager;
 import com.hamusuke.battlebgmplayer.invoker.client.MusicTickerInvoker;
@@ -17,7 +18,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.MathHelper;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -162,8 +163,8 @@ public final class BattleBGMPlayerClient {
     }
 
     @SubscribeEvent
-    public void onRenderWorld(final RenderWorldLastEvent event) {
-
+    public void onRenderGameOverlay(final RenderGameOverlayEvent event) {
+        this.mobs.forEach(entityLiving -> DirectionIndicatorRenderer.render(event, entityLiving));
     }
 
     @SubscribeEvent

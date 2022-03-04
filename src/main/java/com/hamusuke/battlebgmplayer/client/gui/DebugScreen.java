@@ -64,8 +64,6 @@ public class DebugScreen extends GuiScreen {
 
         final class Entry implements IGuiListEntry {
             private final String mobInfo;
-            private int x;
-            private int y;
 
             private Entry(EntityLiving mob) {
                 this.mobInfo = mob.toString();
@@ -73,13 +71,11 @@ public class DebugScreen extends GuiScreen {
 
             @Override
             public void updatePosition(int slotIndex, int x, int y, float partialTicks) {
-                this.x = x;
-                this.y = y;
             }
 
             @Override
             public void drawEntry(int slotIndex, int x, int y, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
-                DebugScreen.this.fontRenderer.drawStringWithShadow(this.mobInfo, this.x, this.y, 16777215);
+                DebugScreen.this.fontRenderer.drawStringWithShadow(this.mobInfo, 0, y, 16777215);
             }
 
             @Override
@@ -89,7 +85,6 @@ public class DebugScreen extends GuiScreen {
 
             @Override
             public void mouseReleased(int slotIndex, int x, int y, int mouseEvent, int relativeX, int relativeY) {
-
             }
         }
     }
