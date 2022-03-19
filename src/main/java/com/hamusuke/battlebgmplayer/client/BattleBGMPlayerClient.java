@@ -9,7 +9,7 @@ import com.hamusuke.battlebgmplayer.client.sounds.BattleSoundManager;
 import com.hamusuke.battlebgmplayer.invoker.client.MusicTickerInvoker;
 import com.hamusuke.battlebgmplayer.invoker.client.SoundHandlerInvoker;
 import com.hamusuke.battlebgmplayer.invoker.client.SoundManagerInvoker;
-import com.hamusuke.battlebgmplayer.network.MobSetTargetPlayerS2CPacket;
+import com.hamusuke.battlebgmplayer.network.packet.s2c.MobSetTargetPlayerS2CPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.SoundHandler;
@@ -38,7 +38,7 @@ public final class BattleBGMPlayerClient {
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static BattleBGMPlayerClient INSTANCE;
     private static final Random RANDOM = new Random();
-    private final Set<EntityLiving> mobs = Sets.newConcurrentHashSet();
+    private final Set<EntityLiving> clientMobs = Sets.newConcurrentHashSet();
     private final AtomicBoolean started = new AtomicBoolean();
     private final BattleSoundManager battleSoundManager;
     @Nullable
@@ -64,7 +64,7 @@ public final class BattleBGMPlayerClient {
             if (entity instanceof EntityLiving) {
                 EntityLiving mob = (EntityLiving) entity;
                 if (packet.isStart()) {
-                    if (this.mobs.add(mob)) {
+                    if (this.clientMobs.add(mob)) {
                         this.recentMob = mob;
 
                         if (!this.isDuringBattle()) {
@@ -72,7 +72,7 @@ public final class BattleBGMPlayerClient {
                         }
                     }
                 } else {
-                    this.mobs.remove(mob);
+                    this.clientMobs.remove(mob);
                     this.stopIfPlayerIsNotTargeted();
                 }
             }
@@ -84,7 +84,7 @@ public final class BattleBGMPlayerClient {
     }
 
     private void stopIfPlayerIsNotTargeted() {
-        if (this.mobs.isEmpty() && this.isDuringBattle()) {
+        if (this.clientMobs.isEmpty() || !this.isDuringBattle()) {
             this.stop();
         }
     }
@@ -136,14 +136,13 @@ public final class BattleBGMPlayerClient {
     }
 
     private void stop() {
-        if (this.isDuringBattle()) {
-            this.started.set(false);
-            if (this.currentBattleMusic != null) {
-                this.currentBattleMusic.pause();
-            }
-            this.startResumeMusicTicks = RESUME_MUSIC_TICKS;
-            this.chooseNextTicks = MathHelper.getInt(RANDOM, 600, 2400);
+        this.started.set(false);
+        this.clientMobs.clear();
+        if (this.currentBattleMusic != null) {
+            this.currentBattleMusic.pause();
         }
+        this.startResumeMusicTicks = RESUME_MUSIC_TICKS;
+        this.chooseNextTicks = MathHelper.getInt(RANDOM, 600, 2400);
     }
 
     public void stopAll() {
@@ -155,7 +154,7 @@ public final class BattleBGMPlayerClient {
 
         this.currentBattleMusic = null;
         this.chooseNextTicks = 0;
-        this.mobs.clear();
+        this.clientMobs.clear();
     }
 
     public void reloadBattleSoundManager() {
@@ -163,8 +162,10 @@ public final class BattleBGMPlayerClient {
     }
 
     @SubscribeEvent
-    public void onRenderGameOverlay(final RenderGameOverlayEvent event) {
-        this.mobs.forEach(entityLiving -> DirectionIndicatorRenderer.render(event, entityLiving));
+    public void onRenderGameOverlay(final RenderGameOverlayEvent.Post event) {
+        if (event.getType() == RenderGameOverlayEvent.ElementType.POTION_ICONS) {
+            this.clientMobs.forEach(entityLiving -> DirectionIndicatorRenderer.render(event, entityLiving));
+        }
     }
 
     @SubscribeEvent
@@ -194,8 +195,8 @@ public final class BattleBGMPlayerClient {
                     this.play(this.recentMob);
                 }
 
-                if (!this.mobs.isEmpty()) {
-                    this.mobs.removeIf(entityLiving -> entityLiving.dimension != mc.player.dimension || !entityLiving.isEntityAlive());
+                if (!this.clientMobs.isEmpty()) {
+                    this.clientMobs.removeIf(entityLiving -> entityLiving.dimension != mc.player.dimension || !entityLiving.isEntityAlive());
                     this.stopIfPlayerIsNotTargeted();
                 }
             }
@@ -226,8 +227,8 @@ public final class BattleBGMPlayerClient {
         return ((SoundHandlerInvoker) mc.getSoundHandler()).getSoundManagerInvoker();
     }
 
-    public ImmutableSet<EntityLiving> getImmutableMobs() {
-        return ImmutableSet.copyOf(this.mobs);
+    public ImmutableSet<EntityLiving> getImmutableClientMobs() {
+        return ImmutableSet.copyOf(this.clientMobs);
     }
 
     public static BattleBGMPlayerClient getInstance() {

@@ -22,7 +22,8 @@ public class ConfigScreen extends GuiScreen {
 
         this.addButton(new GuiButton(0, this.width / 4, this.height / 2 - 30, this.width / 2, 20, "Reload Config"));
         this.addButton(new GuiButton(2, this.width / 4, this.height / 2 - 10, this.width / 2, 20, "Stop Playing Battle Music"));
-        this.addButton(new GuiButton(3, this.width / 4, this.height / 2 + 10, this.width / 2, 20, "Display Debug Screen"));
+        GuiButton displayDebugScreen = this.addButton(new GuiButton(3, this.width / 4, this.height / 2 + 10, this.width / 2, 20, "Display Debug Screen"));
+        displayDebugScreen.enabled = this.mc.world != null;
         this.addButton(new GuiButton(1, this.width / 4, this.height - 20, this.width / 2, 20, I18n.format("gui.done")));
     }
 

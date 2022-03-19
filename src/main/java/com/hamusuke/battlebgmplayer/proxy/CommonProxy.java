@@ -1,13 +1,16 @@
 package com.hamusuke.battlebgmplayer.proxy;
 
-import com.hamusuke.battlebgmplayer.network.MobSetTargetPlayerS2CPacket;
+import com.hamusuke.battlebgmplayer.network.packet.s2c.ContactServerMobS2CPacket;
+import com.hamusuke.battlebgmplayer.network.packet.s2c.MobSetTargetPlayerS2CPacket;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 public class CommonProxy {
     public void preInit(final FMLPreInitializationEvent event) {
     }
 
-    public void onMessage(MobSetTargetPlayerS2CPacket packet, MessageContext context) {
+    public void onMessage(MobSetTargetPlayerS2CPacket packet) {
+    }
+
+    public void onMessage(ContactServerMobS2CPacket packet) {
     }
 }

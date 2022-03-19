@@ -1,7 +1,8 @@
 package com.hamusuke.battlebgmplayer.mixin;
 
-import com.hamusuke.battlebgmplayer.network.MobSetTargetPlayerS2CPacket;
+import com.hamusuke.battlebgmplayer.invoker.EntityLivingInvoker;
 import com.hamusuke.battlebgmplayer.network.NetworkManager;
+import com.hamusuke.battlebgmplayer.network.packet.s2c.MobSetTargetPlayerS2CPacket;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -18,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Mixin(EntityLiving.class)
-public abstract class EntityLivingMixin extends EntityLivingBase {
+public abstract class EntityLivingMixin extends EntityLivingBase implements EntityLivingInvoker {
     @Nullable
     private EntityPlayerMP currentTargetedPlayer;
 
@@ -50,6 +51,12 @@ public abstract class EntityLivingMixin extends EntityLivingBase {
                 this.sendToClient(false, this.getServer().getPlayerList().getPlayers());
             }
         }
+    }
+
+    @Override
+    @Nullable
+    public EntityPlayerMP getCurrentTargetedPlayer() {
+        return this.currentTargetedPlayer;
     }
 
     private void sendToClient(boolean start, EntityPlayerMP target) {

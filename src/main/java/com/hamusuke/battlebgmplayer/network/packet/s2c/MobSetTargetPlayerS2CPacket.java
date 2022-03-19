@@ -1,4 +1,4 @@
-package com.hamusuke.battlebgmplayer.network;
+package com.hamusuke.battlebgmplayer.network.packet.s2c;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.EntityLiving;
