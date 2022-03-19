@@ -20,12 +20,14 @@ public final class ContactServerMobS2CPacket implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
+        this.id = buf.readInt();
         this.attackTargetInfo = ByteBufUtils.readUTF8String(buf);
         this.currentTargetedPlayerInfo = ByteBufUtils.readUTF8String(buf);
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
+        buf.writeInt(this.id);
         ByteBufUtils.writeUTF8String(buf, this.attackTargetInfo);
         ByteBufUtils.writeUTF8String(buf, this.currentTargetedPlayerInfo);
     }
