@@ -15,7 +15,9 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @SideOnly(Side.CLIENT)
@@ -23,6 +25,7 @@ public class DebugScreen extends GuiScreen {
     @Nullable
     private final GuiScreen parent;
     private TargetingMobsList list;
+    private final AtomicBoolean listConstructed = new AtomicBoolean();
 
     public DebugScreen(@Nullable GuiScreen parent) {
         this.parent = parent;
@@ -30,7 +33,10 @@ public class DebugScreen extends GuiScreen {
 
     @Override
     public void initGui() {
+        this.listConstructed.set(false);
         this.list = new TargetingMobsList();
+        this.listConstructed.set(true);
+        this.list.entries.forEach(entry -> NetworkManager.sendToServer(new ContactServerMobC2SPacket(entry.clientMob)));
         this.addButton(new GuiButton(0, this.width / 4, this.height - 20, this.width / 2, 20, I18n.format("gui.back")));
     }
 
@@ -42,7 +48,7 @@ public class DebugScreen extends GuiScreen {
     }
 
     public void accept(ContactServerMobS2CPacket packet) {
-        synchronized (this.list.entries) {
+        if (this.listConstructed.get()) {
             this.list.entries.forEach(entry -> {
                 if (entry.clientMob.getEntityId() == packet.getEntityId()) {
                     entry.attackTargetInfo = packet.getAttackTargetInfo();
@@ -50,6 +56,24 @@ public class DebugScreen extends GuiScreen {
                 }
             });
         }
+    }
+
+    @Override
+    public void handleMouseInput() throws IOException {
+        this.list.handleMouseInput();
+        super.handleMouseInput();
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        this.list.mouseClicked(mouseX, mouseY, mouseButton);
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
+    @Override
+    protected void mouseReleased(int mouseX, int mouseY, int state) {
+        this.list.mouseReleased(mouseX, mouseY, state);
+        super.mouseReleased(mouseX, mouseY, state);
     }
 
     @Override
@@ -76,6 +100,11 @@ public class DebugScreen extends GuiScreen {
             return this.entries.size();
         }
 
+        @Override
+        protected int getScrollBarX() {
+            return DebugScreen.this.width - 6;
+        }
+
         final class Entry implements IGuiListEntry {
             private final EntityLiving clientMob;
             private final String mobInfo;
@@ -85,7 +114,6 @@ public class DebugScreen extends GuiScreen {
             private Entry(EntityLiving clientMob) {
                 this.clientMob = clientMob;
                 this.mobInfo = this.clientMob.toString();
-                NetworkManager.sendToServer(new ContactServerMobC2SPacket(this.clientMob));
             }
 
             @Override
@@ -95,8 +123,8 @@ public class DebugScreen extends GuiScreen {
             @Override
             public void drawEntry(int slotIndex, int x, int y, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
                 DebugScreen.this.fontRenderer.drawStringWithShadow(this.mobInfo, 0, y, 16777215);
-                DebugScreen.this.fontRenderer.drawStringWithShadow("this.attackTarget(Server Side) = " + this.attackTargetInfo, 0, y + 10, 16777215);
-                DebugScreen.this.fontRenderer.drawStringWithShadow("this.currentTargetedPlayer(Server Side) = " + this.currentTargetedPlayerInfo, 0, y + 20, 16777215);
+                DebugScreen.this.fontRenderer.drawStringWithShadow("this.attackTarget = " + this.attackTargetInfo, 0, y + 10, 16777215);
+                DebugScreen.this.fontRenderer.drawStringWithShadow("this.currentTargetedPlayer = " + this.currentTargetedPlayerInfo, 0, y + 20, 16777215);
             }
 
             @Override
