@@ -39,6 +39,7 @@ public class DirectionIndicatorRenderer {
             GlStateManager.pushMatrix();
             GlStateManager.disableBlend();
             GlStateManager.translate(MathHelper.clamp((MathHelper.sin(angleRad) * (xz + d) + scaledWidthHalf), 8.0D, scaledWidth - 8.0D), MathHelper.clamp(-MathHelper.cos(angleRad) * (xz + d) + scaledHeightHalf, 8.0D, scaledHeight - 8.0D), -85.0D);
+            GlStateManager.clearColor(1.0F, 1.0F, 1.0F, 1.0F);
             float rotateAngle = MathHelper.wrapDegrees(angleRad * toDeg);
             GlStateManager.rotate(rotateAngle, 0.0F, 0.0F, 1.0F);
             Tessellator tessellator = Tessellator.getInstance();
