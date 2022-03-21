@@ -172,6 +172,8 @@ public final class BattleBGMPlayerClient {
     public void onPlaySound(final PlaySoundEvent event) {
         if (this.isDuringBattle() && this.currentBattleMusic != null && mc.getSoundHandler().isSoundPlaying(this.currentBattleMusic) && event.getSound().getCategory() == SoundCategory.MUSIC) {
             event.setResultSound(null);
+        } else if (this.isDuringBattle() && event.getSound().getCategory() == SoundCategory.MUSIC) {
+            this.stop();
         }
     }
 

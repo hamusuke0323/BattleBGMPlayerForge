@@ -3,6 +3,7 @@ package com.hamusuke.battlebgmplayer.mixin;
 import com.hamusuke.battlebgmplayer.invoker.EntityLivingInvoker;
 import com.hamusuke.battlebgmplayer.network.NetworkManager;
 import com.hamusuke.battlebgmplayer.network.packet.s2c.MobSetTargetPlayerS2CPacket;
+import com.hamusuke.battlebgmplayer.util.Counter;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -22,6 +23,8 @@ import java.util.List;
 public abstract class EntityLivingMixin extends EntityLivingBase implements EntityLivingInvoker {
     @Nullable
     private EntityPlayerMP currentTargetedPlayer;
+    private final Counter counter = new Counter(10);
+    private boolean sent;
 
     EntityLivingMixin(World worldIn) {
         super(worldIn);
@@ -32,6 +35,7 @@ public abstract class EntityLivingMixin extends EntityLivingBase implements Enti
         super.onDeath(cause);
 
         if (!this.world.isRemote && this.getServer() != null) {
+            this.counter.reset();
             this.sendToClient(false, this.getServer().getPlayerList().getPlayers());
         }
     }
@@ -39,13 +43,19 @@ public abstract class EntityLivingMixin extends EntityLivingBase implements Enti
     @Inject(method = "setAttackTarget", at = @At("TAIL"))
     private void setTarget(@Nullable EntityLivingBase target, CallbackInfo ci) {
         if (!this.world.isRemote && this.getServer() != null) {
-            if (target instanceof EntityPlayerMP && !target.equals(this.currentTargetedPlayer)) {
-                if (this.currentTargetedPlayer != null) {
-                    this.sendToClient(false, this.currentTargetedPlayer);
-                }
+            if (target instanceof EntityPlayerMP) {
+                if (!target.equals(this.currentTargetedPlayer)) {
+                    if (this.currentTargetedPlayer != null) {
+                        this.sendToClient(false, this.currentTargetedPlayer);
+                    }
 
-                this.currentTargetedPlayer = (EntityPlayerMP) target;
-                this.sendToClient(true, this.currentTargetedPlayer);
+                    this.currentTargetedPlayer = (EntityPlayerMP) target;
+                    this.sent = false;
+                    this.counter.reset();
+                } else if (!this.sent && this.counter.count()) {
+                    this.sent = true;
+                    this.sendToClient(true, this.currentTargetedPlayer);
+                }
             } else if (target == null && this.currentTargetedPlayer != null) {
                 this.currentTargetedPlayer = null;
                 this.sendToClient(false, this.getServer().getPlayerList().getPlayers());
