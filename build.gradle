@@ -61,6 +61,10 @@ minecraft {
 
 repositories {
     maven { url = 'https://repo.spongepowered.org/maven' }
+    maven {
+        url 'https://repo.maven.apache.org/maven2'
+        name 'Maven Central'
+    }
 }
 
 configurations {
@@ -69,7 +73,7 @@ configurations {
 }
 
 dependencies {
-    implementation 'org.jetbrains:annotations:20.1.0'
+    implementation 'org.jetbrains:annotations:23.0.0'
 
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.

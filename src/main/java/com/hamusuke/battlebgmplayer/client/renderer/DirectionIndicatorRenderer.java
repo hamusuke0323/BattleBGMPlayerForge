@@ -30,8 +30,9 @@ public class DirectionIndicatorRenderer {
             double scaledHeight = event.getResolution().getScaledHeight_double();
             double scaledWidthHalf = scaledWidth / 2.0D;
             double scaledHeightHalf = scaledHeight / 2.0D;
-            double x = entity.posX - mob.posX;
-            double z = entity.posZ - mob.posZ;
+            float delta = event.getPartialTicks();
+            double x = lerp(delta, entity.prevPosX, entity.posX) - lerp(delta, mob.prevPosX, mob.posX);
+            double z = lerp(delta, entity.prevPosZ, entity.posZ) - lerp(delta, mob.prevPosZ, mob.posZ);
             float phi = (float) MathHelper.atan2(x, z);
             double xz = Math.sqrt(x * x + z * z);
             double d = Math.sqrt(Math.pow(scaledWidthHalf / 3.0D, 2.0D) + Math.pow(scaledHeightHalf / 3.0D, 2.0D));
@@ -55,5 +56,9 @@ public class DirectionIndicatorRenderer {
             GlStateManager.popMatrix();
             mc.getTextureManager().bindTexture(Gui.ICONS);
         }
+    }
+
+    private static double lerp(float delta, double start, double end) {
+        return start + (end - start) * delta;
     }
 }

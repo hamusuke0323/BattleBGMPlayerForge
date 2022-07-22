@@ -3,7 +3,6 @@ package com.hamusuke.battlebgmplayer.mixin;
 import com.hamusuke.battlebgmplayer.invoker.EntityLivingInvoker;
 import com.hamusuke.battlebgmplayer.network.NetworkManager;
 import com.hamusuke.battlebgmplayer.network.packet.s2c.MobSetTargetPlayerS2CPacket;
-import com.hamusuke.battlebgmplayer.util.Counter;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -18,13 +17,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mixin(EntityLiving.class)
 public abstract class EntityLivingMixin extends EntityLivingBase implements EntityLivingInvoker {
     @Nullable
     private EntityPlayerMP currentTargetedPlayer;
-    private final Counter counter = new Counter(10);
-    private boolean sent;
+    private final AtomicBoolean sent = new AtomicBoolean();
 
     EntityLivingMixin(World worldIn) {
         super(worldIn);
@@ -35,7 +34,8 @@ public abstract class EntityLivingMixin extends EntityLivingBase implements Enti
         super.onDeath(cause);
 
         if (!this.world.isRemote && this.getServer() != null) {
-            this.counter.reset();
+            this.currentTargetedPlayer = null;
+            this.sent.set(false);
             this.sendToClient(false, this.getServer().getPlayerList().getPlayers());
         }
     }
@@ -50,10 +50,9 @@ public abstract class EntityLivingMixin extends EntityLivingBase implements Enti
                     }
 
                     this.currentTargetedPlayer = (EntityPlayerMP) target;
-                    this.sent = false;
-                    this.counter.reset();
-                } else if (!this.sent && this.counter.count()) {
-                    this.sent = true;
+                    this.sent.set(false);
+                } else if (!this.sent.get()) {
+                    this.sent.set(true);
                     this.sendToClient(true, this.currentTargetedPlayer);
                 }
             } else if (target == null && this.currentTargetedPlayer != null) {
