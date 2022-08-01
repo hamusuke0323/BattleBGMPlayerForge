@@ -80,7 +80,7 @@ public final class BattleBGMPlayerClient {
     }
 
     private boolean shouldPlayBattleMusic() {
-        return this.isDuringBattle() && (this.currentBattleMusic == null || this.getSoundEngineInvoker().isStopped(this.currentBattleMusic));
+        return this.isDuringBattle() && (this.currentBattleMusic == null || !mc.getSoundHandler().isSoundPlaying(this.currentBattleMusic));
     }
 
     private void stopIfPlayerIsNotTargeted() {
@@ -90,40 +90,38 @@ public final class BattleBGMPlayerClient {
     }
 
     private void play(EntityLiving mob) {
-        if (!this.isDuringBattle()) {
-            if (this.currentBattleMusic != null && this.getSoundEngineInvoker().isStopped(this.currentBattleMusic)) {
-                this.currentBattleMusic = null;
+        if (this.currentBattleMusic != null && !mc.getSoundHandler().isSoundPlaying(this.currentBattleMusic)) {
+            this.currentBattleMusic = null;
+        }
+
+        if (this.chooseNextTicks <= 0) {
+            if (this.currentBattleMusic != null) {
+                this.getSoundEngineInvoker().stop(this.currentBattleMusic);
+                this.currentBattleMusic.stop();
             }
 
-            if (this.chooseNextTicks <= 0) {
-                if (this.currentBattleMusic != null) {
-                    this.getSoundEngineInvoker().stop(this.currentBattleMusic);
-                    this.currentBattleMusic.stop();
+            this.currentBattleMusic = null;
+        }
+
+        boolean battleMusicChanged = false;
+        BattleSound previous = this.currentBattleMusic;
+        this.currentBattleMusic = this.battleSoundManager.choose(this.currentBattleMusic, mob, mc.player);
+        if (!this.currentBattleMusic.equals(previous)) {
+            battleMusicChanged = true;
+        }
+
+        if (!this.currentBattleMusic.getSoundLocation().equals(SoundHandler.MISSING_SOUND.getSoundLocation()) && ((SoundHandlerInvoker) mc.getSoundHandler()).getSoundRegistry().containsKey(this.currentBattleMusic.getSoundLocation())) {
+            if (!battleMusicChanged) {
+                if (this.currentBattleMusic.isVolumeZero()) {
+                    this.getSoundEngineInvoker().resume(this.currentBattleMusic);
                 }
-
-                this.currentBattleMusic = null;
+                this.currentBattleMusic.resume();
+            } else {
+                mc.getSoundHandler().playSound(this.currentBattleMusic);
             }
 
-            boolean battleMusicChanged = false;
-            BattleSound previous = this.currentBattleMusic;
-            this.currentBattleMusic = this.battleSoundManager.choose(this.currentBattleMusic, mob, mc.player);
-            if (!this.currentBattleMusic.equals(previous)) {
-                battleMusicChanged = true;
-            }
-
-            if (!this.currentBattleMusic.getSoundLocation().equals(SoundHandler.MISSING_SOUND.getSoundLocation()) && ((SoundHandlerInvoker) mc.getSoundHandler()).getSoundRegistry().containsKey(this.currentBattleMusic.getSoundLocation())) {
-                if (!battleMusicChanged) {
-                    if (this.currentBattleMusic.isVolumeZero()) {
-                        this.getSoundEngineInvoker().resume(this.currentBattleMusic);
-                    }
-                    this.currentBattleMusic.resume();
-                } else {
-                    mc.getSoundHandler().playSound(this.currentBattleMusic);
-                }
-
-                this.started.set(true);
-                this.pauseCurrentMusic();
-            }
+            this.started.set(true);
+            this.pauseCurrentMusic();
         }
     }
 

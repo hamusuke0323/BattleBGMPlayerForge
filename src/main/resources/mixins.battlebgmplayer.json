@@ -8,6 +8,7 @@
   ],
   "client": [
     "client.MusicTickerMixin",
+    "client.MusicTypeMixin",
     "client.SoundHandlerMixin",
     "client.SoundManagerMixin"
   ],

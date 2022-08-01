@@ -11,7 +11,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 public final class BattleBGMPlayer {
     public static final String MOD_ID = "battlebgmplayer";
     public static final String NAME = "Battle BGM Player";
-    public static final String VERSION = "1.2.0";
+    public static final String VERSION = "1.2.1";
     @SidedProxy(modId = MOD_ID, serverSide = "com.hamusuke.battlebgmplayer.proxy.CommonProxy", clientSide = "com.hamusuke.battlebgmplayer.proxy.ClientProxy")
     public static CommonProxy PROXY;
 
