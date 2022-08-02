@@ -9,6 +9,7 @@
   "client": [
     "client.MusicTickerMixin",
     "client.MusicTypeMixin",
+    "client.SoundEventAccessorMixin",
     "client.SoundHandlerMixin",
     "client.SoundManagerMixin"
   ],

@@ -2,11 +2,13 @@ package com.hamusuke.battlebgmplayer.client.sounds;
 
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 import com.hamusuke.battlebgmplayer.client.sound.BattleSound;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.SoundHandler;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLiving;
@@ -14,6 +16,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
+import net.minecraftforge.fml.common.ProgressManager;
 import net.minecraftforge.fml.common.registry.EntityRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -24,6 +27,7 @@ import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 @SideOnly(Side.CLIENT)
@@ -45,49 +49,25 @@ public final class BattleSoundManager {
         this.config = config.resolve(PATH).toFile();
     }
 
-    public BattleSound choose(@Nullable BattleSound current, EntityLiving mob, EntityPlayerSP localPlayer) {
-        BattleSound chosen = this.choose(current, mob, localPlayer.world.getBiome(localPlayer.getPosition()), localPlayer.world);
-        return current != null && current.getSoundLocation().equals(chosen.getSoundLocation()) ? current : chosen;
+    private static void forEachIfHasKey(JsonObject jsonObject, String key, BiConsumer<String, String> consumer) {
+        if (jsonObject.has(key)) {
+            Set<Map.Entry<String, JsonElement>> entrySet = jsonObject.getAsJsonObject(key).entrySet();
+            ProgressManager.ProgressBar bar = ProgressManager.push(key, entrySet.size(), true);
+            entrySet.forEach(entry -> {
+                String k = entry.getKey();
+                String v = entry.getValue().getAsString();
+                bar.step("\"" + k + "\"" + ": " + "\"" + v + "\"");
+                consumer.accept(k, v);
+            });
+            autoPopProgressBar(bar);
+        }
     }
 
-    private BattleSound choose(@Nullable BattleSound current, EntityLiving mob, Biome biome, World level) {
-        ResourceLocation entityName = EntityRegistry.getEntry(mob.getClass()).getRegistryName();
-        ResourceLocation biomeName = biome.getRegistryName();
-        int worldId = level.provider.getDimension();
-
-        ResourceLocation resourceLocation = this.byEntity.get(entityName);
-        ResourceLocation resourceLocation1 = this.byBiome.get(biomeName);
-        ResourceLocation resourceLocation2 = this.byWorld.get(worldId);
-
-        if (resourceLocation != null) {
-            if (current != null && entityName != null && entityName.equals(this.previousEntity)) {
-                return current;
-            }
-
-            this.substitute(true, entityName, biomeName, worldId);
-            return new BattleSound(resourceLocation);
-        } else if (resourceLocation1 != null) {
-            if (current != null && biomeName != null && biomeName.equals(this.previousBiome)) {
-                return current;
-            }
-
-            this.substitute(true, entityName, biomeName, worldId);
-            return new BattleSound(resourceLocation1);
-        } else if (resourceLocation2 != null) {
-            if (current != null && worldId == this.previousWorld) {
-                return current;
-            }
-
-            this.substitute(true, entityName, biomeName, worldId);
-            return new BattleSound(resourceLocation2);
-        } else {
-            if (!this.isNotCurrentSoundDefault && current != null) {
-                return current;
-            }
-
-            this.substitute(false, entityName, biomeName, worldId);
-            return new BattleSound(this.defaultSound);
+    public static void autoPopProgressBar(ProgressManager.ProgressBar bar) {
+        for (int i = bar.getStep(); i < bar.getSteps(); i++) {
+            bar.step("Skip");
         }
+        ProgressManager.pop(bar);
     }
 
     private void substitute(boolean isNotCurrentSoundDefault, ResourceLocation previousEntity, ResourceLocation previousBiome, int previousWorld) {
@@ -108,30 +88,74 @@ public final class BattleSoundManager {
         this.isNotCurrentSoundDefault = false;
     }
 
+    public BattleSound choose(@Nullable ISound previous, @Nullable BattleSound current, EntityLiving mob, EntityPlayerSP localPlayer) {
+        BattleSound chosen = this.choose(previous, current, mob, localPlayer.world.getBiome(localPlayer.getPosition()), localPlayer.world);
+        return current != null && current.getSoundLocation().equals(chosen.getSoundLocation()) ? current : chosen;
+    }
+
+    private BattleSound choose(@Nullable ISound previous, @Nullable BattleSound current, EntityLiving mob, Biome biome, World level) {
+        ResourceLocation entityName = EntityRegistry.getEntry(mob.getClass()).getRegistryName();
+        ResourceLocation biomeName = biome.getRegistryName();
+        int worldId = level.provider.getDimension();
+
+        ResourceLocation resourceLocation = this.byEntity.get(entityName);
+        ResourceLocation resourceLocation1 = this.byBiome.get(biomeName);
+        ResourceLocation resourceLocation2 = this.byWorld.get(worldId);
+
+        if (resourceLocation != null) {
+            if (current != null && entityName != null && entityName.equals(this.previousEntity)) {
+                return current;
+            }
+
+            this.substitute(true, entityName, biomeName, worldId);
+            return new BattleSound(resourceLocation, previous);
+        } else if (resourceLocation1 != null) {
+            if (current != null && biomeName != null && biomeName.equals(this.previousBiome)) {
+                return current;
+            }
+
+            this.substitute(true, entityName, biomeName, worldId);
+            return new BattleSound(resourceLocation1, previous);
+        } else if (resourceLocation2 != null) {
+            if (current != null && worldId == this.previousWorld) {
+                return current;
+            }
+
+            this.substitute(true, entityName, biomeName, worldId);
+            return new BattleSound(resourceLocation2, previous);
+        } else {
+            if (!this.isNotCurrentSoundDefault && current != null) {
+                return current;
+            }
+
+            this.substitute(false, entityName, biomeName, worldId);
+            return new BattleSound(this.defaultSound, previous);
+        }
+    }
+
     public synchronized void load() {
         this.clearAll();
 
+        ProgressManager.ProgressBar bar = ProgressManager.push("Registering conditions", 4, true);
         if (this.config.exists()) {
             try (InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(this.config))) {
                 JsonObject jsonObject = GSON.fromJson(inputStreamReader, JsonObject.class);
                 if (jsonObject.has("defaultSound")) {
-                    this.defaultSound = new ResourceLocation(jsonObject.get("defaultSound").getAsString());
+                    String s = jsonObject.get("defaultSound").getAsString();
+                    bar.step("default sound: " + s);
+                    this.defaultSound = new ResourceLocation(s);
                 }
-                if (jsonObject.has("byWorld")) {
-                    jsonObject.getAsJsonObject("byWorld").entrySet().forEach(entry -> this.byWorld.put(MathHelper.getInt(entry.getKey(), 0), new ResourceLocation(entry.getValue().getAsString())));
-                }
-                forEachIfHasKey(jsonObject, "byBiome", this.byBiome::put);
-                forEachIfHasKey(jsonObject, "byEntity", this.byEntity::put);
+                bar.step("byWorld");
+                forEachIfHasKey(jsonObject, "byWorld", (s, s2) -> this.byWorld.put(MathHelper.getInt(s, 0), new ResourceLocation(s2)));
+                bar.step("byBiome");
+                forEachIfHasKey(jsonObject, "byBiome", (s, s2) -> this.byBiome.put(new ResourceLocation(s), new ResourceLocation(s2)));
+                bar.step("byEntity");
+                forEachIfHasKey(jsonObject, "byEntity", (s, s2) -> this.byEntity.put(new ResourceLocation(s), new ResourceLocation(s2)));
             } catch (Exception e) {
                 LOGGER.warn("Error occurred while loading config from " + PATH, e);
             }
         }
-    }
-
-    private static void forEachIfHasKey(JsonObject jsonObject, String key, BiConsumer<ResourceLocation, ResourceLocation> consumer) {
-        if (jsonObject.has(key)) {
-            jsonObject.getAsJsonObject(key).entrySet().forEach(entry -> consumer.accept(new ResourceLocation(entry.getKey()), new ResourceLocation(entry.getValue().getAsString())));
-        }
+        autoPopProgressBar(bar);
     }
 
     public synchronized void save() {

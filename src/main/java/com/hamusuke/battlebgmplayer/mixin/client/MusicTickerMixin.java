@@ -29,6 +29,11 @@ public final class MusicTickerMixin implements MusicTickerInvoker {
         }
     }
 
+    @Inject(method = "playMusic", at = @At("HEAD"))
+    private void playMusic(MusicTicker.MusicType requestedMusicType, CallbackInfo ci) {
+        BattleBGMPlayerClient.getInstance().resetBattleMusic();
+    }
+
     @Nullable
     public ISound getCurrentMusic() {
         return this.currentMusic;

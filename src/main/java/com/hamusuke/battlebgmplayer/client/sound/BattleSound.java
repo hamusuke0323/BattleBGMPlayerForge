@@ -1,13 +1,15 @@
 package com.hamusuke.battlebgmplayer.client.sound;
 
-import net.minecraft.client.audio.ITickableSound;
-import net.minecraft.client.audio.PositionedSound;
+import com.hamusuke.battlebgmplayer.invoker.client.SoundEventAccessorInvoker;
+import net.minecraft.client.audio.*;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nullable;
+import java.util.List;
 import java.util.UUID;
 
 @SideOnly(Side.CLIENT)
@@ -17,11 +19,14 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
     protected boolean pausing;
     protected int fade = 40;
     protected boolean paused;
+    @Nullable
+    protected final ISound previousSound;
 
-    public BattleSound(ResourceLocation p_119587_) {
+    public BattleSound(ResourceLocation p_119587_, @Nullable ISound previousSound) {
         super(p_119587_, SoundCategory.MUSIC);
         this.attenuationType = AttenuationType.NONE;
         this.repeat = true;
+        this.previousSound = previousSound;
     }
 
     @Override
@@ -66,6 +71,32 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
 
     public void setPaused(boolean paused) {
         this.paused = paused;
+    }
+
+    @Override
+    public SoundEventAccessor createAccessor(SoundHandler handler) {
+        SoundEventAccessor accessor = super.createAccessor(handler);
+        if (this.previousSound != null && accessor != null) {
+            SoundEventAccessorInvoker invoker = (SoundEventAccessorInvoker) accessor;
+            List<ISoundEventAccessor<Sound>> accessors = invoker.getAccessors();
+            if (!accessors.isEmpty()) {
+                int index = -1;
+
+                for (int i = 0; i < accessors.size(); i++) {
+                    ISoundEventAccessor<Sound> accessor1 = accessors.get(i);
+                    if (accessor1.cloneEntry().getSoundLocation().equals(this.previousSound.getSound().getSoundLocation())) {
+                        index = i;
+                    }
+                }
+
+                int j = accessors.size();
+                if (index >= 0) {
+                    this.sound = index + 1 >= j ? accessors.get(0).cloneEntry() : accessors.get(index + 1).cloneEntry();
+                }
+            }
+        }
+
+        return accessor;
     }
 
     @Override

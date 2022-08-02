@@ -44,6 +44,8 @@ public final class BattleBGMPlayerClient {
     private EntityLiving recentMob;
     @Nullable
     private BattleSound currentBattleMusic;
+    @Nullable
+    private ISound previousSound;
     private int chooseNextTicks;
     private int tickCount;
 
@@ -92,7 +94,7 @@ public final class BattleBGMPlayerClient {
 
         boolean battleMusicChanged = false;
         BattleSound previous = this.currentBattleMusic;
-        this.currentBattleMusic = this.battleSoundManager.choose(this.currentBattleMusic, mob, mc.player);
+        this.currentBattleMusic = this.battleSoundManager.choose(this.previousSound, this.currentBattleMusic, mob, mc.player);
         if (!this.currentBattleMusic.equals(previous)) {
             battleMusicChanged = true;
         }
@@ -120,7 +122,7 @@ public final class BattleBGMPlayerClient {
     }
 
     private void stop() {
-        this.chooseNextTicks = MathHelper.getInt(RANDOM, 1200, 2400);
+        this.chooseNextTicks = MathHelper.getInt(RANDOM, 600, 1200);
         this.started.set(false);
         this.clientMobs.clear();
         if (this.currentBattleMusic != null) {
@@ -153,7 +155,8 @@ public final class BattleBGMPlayerClient {
 
     @SubscribeEvent
     public void onPlaySound(final PlaySoundEvent event) {
-        if (this.isDuringBattle() && event.getSound().getCategory() == SoundCategory.MUSIC) {
+        ISound sound = event.getSound();
+        if (this.isDuringBattle() && this.currentBattleMusic != null && !sound.getSoundLocation().equals(this.currentBattleMusic.getSoundLocation()) && sound.getCategory() == SoundCategory.MUSIC) {
             event.setResultSound(null);
         }
     }
@@ -170,7 +173,7 @@ public final class BattleBGMPlayerClient {
 
     @SubscribeEvent
     public void onTickEnd(final TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
+        if (!mc.isGamePaused() && event.phase == TickEvent.Phase.END) {
             if (this.tickCount++ >= 20) {
                 this.tickCount = 0;
 
@@ -189,18 +192,20 @@ public final class BattleBGMPlayerClient {
                 this.currentBattleMusic.setPaused(true);
             }
 
-            if (this.chooseNextTicks > 0) {
+            if (this.chooseNextTicks > 0 && !this.isDuringBattle()) {
                 this.chooseNextTicks--;
-                if (this.chooseNextTicks <= 0) {
-                    if (this.currentBattleMusic != null) {
-                        this.getSoundEngineInvoker().stop(this.currentBattleMusic);
-                        this.currentBattleMusic.stop();
-                    }
-
-                    this.currentBattleMusic = null;
-                }
             }
         }
+    }
+
+    public void resetBattleMusic() {
+        if (this.currentBattleMusic != null) {
+            this.getSoundEngineInvoker().stop(this.currentBattleMusic);
+            this.currentBattleMusic.stop();
+            this.previousSound = this.currentBattleMusic;
+        }
+
+        this.currentBattleMusic = null;
     }
 
     public boolean isDuringBattle() {
