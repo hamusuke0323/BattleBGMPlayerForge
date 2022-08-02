@@ -14,9 +14,9 @@ import java.util.UUID;
 public class BattleSound extends PositionedSound implements ITickableSound, ResumableSoundInstance {
     protected final UUID uuid = UUID.randomUUID();
     protected boolean stopped;
-    protected boolean paused;
+    protected boolean pausing;
     protected int fade = 40;
-    protected boolean pauseRequested;
+    protected boolean paused;
 
     public BattleSound(ResourceLocation p_119587_) {
         super(p_119587_, SoundCategory.MUSIC);
@@ -31,13 +31,13 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
 
     @Override
     public void pause() {
-        this.paused = true;
+        this.pausing = true;
     }
 
     @Override
     public void resume() {
+        this.pausing = false;
         this.paused = false;
-        this.pauseRequested = false;
     }
 
     @Override
@@ -47,25 +47,25 @@ public class BattleSound extends PositionedSound implements ITickableSound, Resu
 
     @Override
     public void update() {
-        if (this.paused && this.fade > 0) {
+        if (this.pausing && this.fade > 0) {
             this.fade--;
             this.volume = MathHelper.clamp(this.fade * 0.025F, 0.0F, 1.0F);
-        } else if (!this.paused && this.fade < 40) {
+        } else if (!this.pausing && this.fade < 40) {
             this.fade++;
             this.volume = MathHelper.clamp(this.fade * 0.025F, 0.0F, 1.0F);
         }
     }
 
     public boolean isVolumeZero() {
-        return this.paused && this.fade <= 0;
+        return this.pausing && this.fade <= 0;
     }
 
-    public boolean isPauseRequested() {
-        return this.pauseRequested;
+    public boolean isPaused() {
+        return this.paused;
     }
 
-    public void setPauseRequested(boolean pauseRequested) {
-        this.pauseRequested = pauseRequested;
+    public void setPaused(boolean paused) {
+        this.paused = paused;
     }
 
     @Override

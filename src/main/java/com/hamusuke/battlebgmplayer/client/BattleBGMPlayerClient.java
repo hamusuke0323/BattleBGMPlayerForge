@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @SideOnly(Side.CLIENT)
 public final class BattleBGMPlayerClient {
-    private static final int RESUME_MUSIC_TICKS = 100;
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static BattleBGMPlayerClient INSTANCE;
     private static final Random RANDOM = new Random();
@@ -42,13 +41,10 @@ public final class BattleBGMPlayerClient {
     private final AtomicBoolean started = new AtomicBoolean();
     private final BattleSoundManager battleSoundManager;
     @Nullable
-    private ISound currentMusic;
-    @Nullable
     private EntityLiving recentMob;
     @Nullable
     private BattleSound currentBattleMusic;
     private int chooseNextTicks;
-    private int startResumeMusicTicks;
     private int tickCount;
 
     private BattleBGMPlayerClient() {
@@ -94,15 +90,6 @@ public final class BattleBGMPlayerClient {
             this.currentBattleMusic = null;
         }
 
-        if (this.chooseNextTicks <= 0) {
-            if (this.currentBattleMusic != null) {
-                this.getSoundEngineInvoker().stop(this.currentBattleMusic);
-                this.currentBattleMusic.stop();
-            }
-
-            this.currentBattleMusic = null;
-        }
-
         boolean battleMusicChanged = false;
         BattleSound previous = this.currentBattleMusic;
         this.currentBattleMusic = this.battleSoundManager.choose(this.currentBattleMusic, mob, mc.player);
@@ -121,26 +108,24 @@ public final class BattleBGMPlayerClient {
             }
 
             this.started.set(true);
-            this.pauseCurrentMusic();
+            this.stopCurrentMusic();
         }
     }
 
-    private void pauseCurrentMusic() {
-        this.startResumeMusicTicks = 0;
-        this.currentMusic = ((MusicTickerInvoker) mc.getMusicTicker()).getCurrentMusic();
-        if (this.currentMusic != null && mc.getSoundHandler().isSoundPlaying(this.currentMusic)) {
-            this.getSoundEngineInvoker().pause(this.currentMusic);
+    private void stopCurrentMusic() {
+        ISound currentMusic = ((MusicTickerInvoker) mc.getMusicTicker()).getCurrentMusic();
+        if (currentMusic != null && mc.getSoundHandler().isSoundPlaying(currentMusic)) {
+            this.getSoundEngineInvoker().stop(currentMusic);
         }
     }
 
     private void stop() {
+        this.chooseNextTicks = MathHelper.getInt(RANDOM, 1200, 2400);
         this.started.set(false);
         this.clientMobs.clear();
         if (this.currentBattleMusic != null) {
             this.currentBattleMusic.pause();
         }
-        this.startResumeMusicTicks = RESUME_MUSIC_TICKS;
-        this.chooseNextTicks = MathHelper.getInt(RANDOM, 600, 2400);
     }
 
     public void stopAll() {
@@ -168,10 +153,8 @@ public final class BattleBGMPlayerClient {
 
     @SubscribeEvent
     public void onPlaySound(final PlaySoundEvent event) {
-        if (this.isDuringBattle() && this.currentBattleMusic != null && mc.getSoundHandler().isSoundPlaying(this.currentBattleMusic) && event.getSound().getCategory() == SoundCategory.MUSIC) {
+        if (this.isDuringBattle() && event.getSound().getCategory() == SoundCategory.MUSIC) {
             event.setResultSound(null);
-        } else if (this.isDuringBattle() && event.getSound().getCategory() == SoundCategory.MUSIC) {
-            this.stop();
         }
     }
 
@@ -201,19 +184,20 @@ public final class BattleBGMPlayerClient {
                 }
             }
 
-            if (this.currentBattleMusic != null && !this.currentBattleMusic.isPauseRequested() && this.currentBattleMusic.isVolumeZero()) {
+            if (this.currentBattleMusic != null && !this.currentBattleMusic.isPaused() && this.currentBattleMusic.isVolumeZero()) {
                 this.getSoundEngineInvoker().pause(this.currentBattleMusic);
-                this.currentBattleMusic.setPauseRequested(true);
+                this.currentBattleMusic.setPaused(true);
             }
 
             if (this.chooseNextTicks > 0) {
                 this.chooseNextTicks--;
-            }
+                if (this.chooseNextTicks <= 0) {
+                    if (this.currentBattleMusic != null) {
+                        this.getSoundEngineInvoker().stop(this.currentBattleMusic);
+                        this.currentBattleMusic.stop();
+                    }
 
-            if (this.startResumeMusicTicks > 0) {
-                this.startResumeMusicTicks--;
-                if (!this.isDuringBattle() && this.startResumeMusicTicks <= 0 && this.currentMusic != null) {
-                    this.getSoundEngineInvoker().resume(this.currentMusic);
+                    this.currentBattleMusic = null;
                 }
             }
         }
@@ -221,6 +205,10 @@ public final class BattleBGMPlayerClient {
 
     public boolean isDuringBattle() {
         return this.started.get();
+    }
+
+    public int getChooseNextTicks() {
+        return this.chooseNextTicks;
     }
 
     private SoundManagerInvoker getSoundEngineInvoker() {

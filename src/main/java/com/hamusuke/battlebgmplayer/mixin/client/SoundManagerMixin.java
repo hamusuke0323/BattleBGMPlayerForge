@@ -7,7 +7,6 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,10 +27,6 @@ public abstract class SoundManagerMixin implements SoundManagerInvoker {
     @Shadow
     @Final
     private Map<ISound, String> invPlayingSounds;
-
-    @Shadow
-    @Final
-    private Map<String, ISound> playingSounds;
 
     @Shadow
     @Final
@@ -68,25 +63,24 @@ public abstract class SoundManagerMixin implements SoundManagerInvoker {
     }
 
     @Override
-    public final boolean isStopped(@NotNull ISound soundInstance) {
-        return !this.playingSounds.containsValue(soundInstance) || !this.invPlayingSounds.containsKey(soundInstance);
-    }
-
-    @Override
     public final SoundSystem getSoundSystem() {
+        SoundSystem soundSystem;
+
         try {
             Field sndSystem = ((SoundManager) (Object) this).getClass().getDeclaredField("field_148620_e");
             sndSystem.setAccessible(true);
-            return (SoundSystem) sndSystem.get(this);
+            soundSystem = (SoundSystem) sndSystem.get(this);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             try {
                 Field sndSystem = ((SoundManager) (Object) this).getClass().getDeclaredField("sndSystem");
                 sndSystem.setAccessible(true);
-                return (SoundSystem) sndSystem.get(this);
+                soundSystem = (SoundSystem) sndSystem.get(this);
             } catch (NoSuchFieldException | IllegalAccessException ex) {
                 LOGGER.error("Error occurred while getting private field, Minecraft will crash.", ex);
-                return null;
+                soundSystem = null;
             }
         }
+
+        return soundSystem;
     }
 }

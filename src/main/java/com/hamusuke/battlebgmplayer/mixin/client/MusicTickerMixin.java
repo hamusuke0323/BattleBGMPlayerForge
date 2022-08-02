@@ -23,7 +23,8 @@ public final class MusicTickerMixin implements MusicTickerInvoker {
 
     @Inject(method = "update", at = @At("HEAD"), cancellable = true)
     private void tick(CallbackInfo ci) {
-        if (BattleBGMPlayerClient.getInstance().isDuringBattle()) {
+        BattleBGMPlayerClient client = BattleBGMPlayerClient.getInstance();
+        if (client.isDuringBattle() || client.getChooseNextTicks() > 0) {
             ci.cancel();
         }
     }
