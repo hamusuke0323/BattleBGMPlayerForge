@@ -26,6 +26,8 @@ import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.Random;
@@ -34,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @SideOnly(Side.CLIENT)
 public final class BattleBGMPlayerClient {
+    private static final Logger LOGGER = LogManager.getLogger();
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static BattleBGMPlayerClient INSTANCE;
     private static final Random RANDOM = new Random();
@@ -122,7 +125,7 @@ public final class BattleBGMPlayerClient {
     }
 
     private void stop() {
-        this.chooseNextTicks = MathHelper.getInt(RANDOM, 600, 1200);
+        this.chooseNextTicks = MathHelper.getInt(RANDOM, 1200, 2400);
         this.started.set(false);
         this.clientMobs.clear();
         if (this.currentBattleMusic != null) {
@@ -206,6 +209,8 @@ public final class BattleBGMPlayerClient {
         }
 
         this.currentBattleMusic = null;
+
+        LOGGER.debug("reset battle music.");
     }
 
     public boolean isDuringBattle() {
