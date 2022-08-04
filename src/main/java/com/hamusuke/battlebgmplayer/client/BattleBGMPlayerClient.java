@@ -120,12 +120,12 @@ public final class BattleBGMPlayerClient {
     private void stopCurrentMusic() {
         ISound currentMusic = ((MusicTickerInvoker) mc.getMusicTicker()).getCurrentMusic();
         if (currentMusic != null && mc.getSoundHandler().isSoundPlaying(currentMusic)) {
-            this.getSoundEngineInvoker().stop(currentMusic);
+            mc.getSoundHandler().stopSound(currentMusic);
         }
     }
 
     private void stop() {
-        this.chooseNextTicks = MathHelper.getInt(RANDOM, 1200, 2400);
+        this.chooseNextTicks = MathHelper.getInt(RANDOM, 600, 1200);
         this.started.set(false);
         this.clientMobs.clear();
         if (this.currentBattleMusic != null) {
@@ -137,7 +137,7 @@ public final class BattleBGMPlayerClient {
         this.stop();
 
         if (this.currentBattleMusic != null) {
-            this.getSoundEngineInvoker().stop(this.currentBattleMusic);
+            mc.getSoundHandler().stopSound(this.currentBattleMusic);
         }
 
         this.currentBattleMusic = null;
@@ -203,18 +203,28 @@ public final class BattleBGMPlayerClient {
 
     public void resetBattleMusic() {
         if (this.currentBattleMusic != null) {
-            this.getSoundEngineInvoker().stop(this.currentBattleMusic);
+            mc.getSoundHandler().stopSound(this.currentBattleMusic);
             this.currentBattleMusic.stop();
             this.previousSound = this.currentBattleMusic;
         }
 
         this.currentBattleMusic = null;
 
-        LOGGER.debug("reset battle music.");
+        LOGGER.info("reset battle music.");
     }
 
     public boolean isDuringBattle() {
         return this.started.get();
+    }
+
+    @Nullable
+    public BattleSound getCurrentBattleMusic() {
+        return this.currentBattleMusic;
+    }
+
+    @Nullable
+    public ISound getPreviousSound() {
+        return this.previousSound;
     }
 
     public int getChooseNextTicks() {

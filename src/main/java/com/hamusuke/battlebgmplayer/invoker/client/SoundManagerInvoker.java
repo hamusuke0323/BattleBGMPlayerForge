@@ -9,9 +9,6 @@ import paulscode.sound.SoundSystem;
 public interface SoundManagerInvoker {
     SoundSystem getSoundSystem();
 
-    default void stop(ISound soundInstance) {
-    }
-
     default void pause(ISound soundInstance) {
     }
 

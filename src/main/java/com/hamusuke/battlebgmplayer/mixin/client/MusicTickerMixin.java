@@ -29,11 +29,13 @@ public final class MusicTickerMixin implements MusicTickerInvoker {
         }
     }
 
-    @Inject(method = "playMusic", at = @At("HEAD"))
+    @Inject(method = "playMusic", at = @At("HEAD"), cancellable = true)
     private void playMusic(MusicTicker.MusicType requestedMusicType, CallbackInfo ci) {
         BattleBGMPlayerClient client = BattleBGMPlayerClient.getInstance();
         if (!client.isDuringBattle() && client.getChooseNextTicks() <= 0) {
             BattleBGMPlayerClient.getInstance().resetBattleMusic();
+        } else {
+            ci.cancel();
         }
     }
 

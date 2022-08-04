@@ -2,9 +2,11 @@ package com.hamusuke.battlebgmplayer.client.gui;
 
 import com.google.common.collect.Lists;
 import com.hamusuke.battlebgmplayer.client.BattleBGMPlayerClient;
+import com.hamusuke.battlebgmplayer.client.sound.BattleSound;
 import com.hamusuke.battlebgmplayer.network.NetworkManager;
 import com.hamusuke.battlebgmplayer.network.packet.c2s.ContactServerMobC2SPacket;
 import com.hamusuke.battlebgmplayer.network.packet.s2c.ContactServerMobS2CPacket;
+import net.minecraft.client.audio.ISound;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiListExtended;
 import net.minecraft.client.gui.GuiScreen;
@@ -36,7 +38,7 @@ public class DebugScreen extends GuiScreen {
         this.listConstructed.set(false);
         this.list = new TargetingMobsList();
         this.listConstructed.set(true);
-        this.list.entries.forEach(entry -> NetworkManager.sendToServer(new ContactServerMobC2SPacket(entry.clientMob)));
+        this.list.entries.stream().filter(iGuiListEntry -> iGuiListEntry instanceof TargetingMobsList.ClientMobEntry).map(iGuiListEntry -> (TargetingMobsList.ClientMobEntry) iGuiListEntry).forEach(entry -> NetworkManager.sendToServer(new ContactServerMobC2SPacket(entry.clientMob)));
         this.addButton(new GuiButton(0, this.width / 4, this.height - 20, this.width / 2, 20, I18n.format("gui.back")));
     }
 
@@ -50,9 +52,12 @@ public class DebugScreen extends GuiScreen {
     public void accept(ContactServerMobS2CPacket packet) {
         if (this.listConstructed.get()) {
             this.list.entries.forEach(entry -> {
-                if (entry.clientMob.getEntityId() == packet.getEntityId()) {
-                    entry.attackTargetInfo = packet.getAttackTargetInfo();
-                    entry.currentTargetedPlayerInfo = packet.getCurrentTargetedPlayerInfo();
+                if (entry instanceof TargetingMobsList.ClientMobEntry) {
+                    TargetingMobsList.ClientMobEntry mobEntry = (TargetingMobsList.ClientMobEntry) entry;
+                    if (mobEntry.clientMob.getEntityId() == packet.getEntityId()) {
+                        mobEntry.attackTargetInfo = packet.getAttackTargetInfo();
+                        mobEntry.currentTargetedPlayerInfo = packet.getCurrentTargetedPlayerInfo();
+                    }
                 }
             });
         }
@@ -82,11 +87,25 @@ public class DebugScreen extends GuiScreen {
     }
 
     final class TargetingMobsList extends GuiListExtended {
-        private final List<Entry> entries = Lists.newArrayList();
+        private final List<IGuiListEntry> entries = Lists.newArrayList();
 
         public TargetingMobsList() {
             super(DebugScreen.this.mc, DebugScreen.this.width, DebugScreen.this.height, 20, DebugScreen.this.height - 20, 30);
-            this.entries.addAll(BattleBGMPlayerClient.getInstance().getImmutableClientMobs().stream().map(Entry::new).collect(Collectors.toList()));
+            BattleBGMPlayerClient client = BattleBGMPlayerClient.getInstance();
+            BattleSound current = client.getCurrentBattleMusic();
+            ISound previous = client.getPreviousSound();
+            int tick = client.getChooseNextTicks();
+
+            if (current != null) {
+                this.entries.add(new StringEntry("current battle bgm: " + current.getSound().getSoundLocation()));
+            }
+
+            if (previous != null) {
+                this.entries.add(new StringEntry("previous battle bgm: " + previous.getSound().getSoundLocation()));
+            }
+
+            this.entries.add(new StringEntry("tick to reset battle bgm: " + tick));
+            this.entries.addAll(client.getImmutableClientMobs().stream().map(ClientMobEntry::new).collect(Collectors.toList()));
         }
 
         @Override
@@ -105,13 +124,39 @@ public class DebugScreen extends GuiScreen {
             return DebugScreen.this.width - 6;
         }
 
-        final class Entry implements IGuiListEntry {
+        final class StringEntry implements IGuiListEntry {
+            private final String string;
+
+            private StringEntry(String string) {
+                this.string = string;
+            }
+
+            @Override
+            public void updatePosition(int slotIndex, int x, int y, float partialTicks) {
+            }
+
+            @Override
+            public void drawEntry(int slotIndex, int x, int y, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
+                DebugScreen.this.fontRenderer.drawStringWithShadow(this.string, 0.0F, (float) y + 10, 16777215);
+            }
+
+            @Override
+            public boolean mousePressed(int slotIndex, int mouseX, int mouseY, int mouseEvent, int relativeX, int relativeY) {
+                return false;
+            }
+
+            @Override
+            public void mouseReleased(int slotIndex, int x, int y, int mouseEvent, int relativeX, int relativeY) {
+            }
+        }
+
+        final class ClientMobEntry implements IGuiListEntry {
             private final EntityLiving clientMob;
             private final String mobInfo;
             private String attackTargetInfo = "contacting the server...";
             private String currentTargetedPlayerInfo = "contacting the server...";
 
-            private Entry(EntityLiving clientMob) {
+            private ClientMobEntry(EntityLiving clientMob) {
                 this.clientMob = clientMob;
                 this.mobInfo = this.clientMob.toString();
             }
@@ -122,9 +167,9 @@ public class DebugScreen extends GuiScreen {
 
             @Override
             public void drawEntry(int slotIndex, int x, int y, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
-                DebugScreen.this.fontRenderer.drawStringWithShadow(this.mobInfo, 0, y, 16777215);
-                DebugScreen.this.fontRenderer.drawStringWithShadow("this.attackTarget = " + this.attackTargetInfo, 0, y + 10, 16777215);
-                DebugScreen.this.fontRenderer.drawStringWithShadow("this.currentTargetedPlayer = " + this.currentTargetedPlayerInfo, 0, y + 20, 16777215);
+                DebugScreen.this.fontRenderer.drawStringWithShadow(this.mobInfo, 0.0F, (float) y, 16777215);
+                DebugScreen.this.fontRenderer.drawStringWithShadow("this.attackTarget = " + this.attackTargetInfo, 0.0F, (float) y + 10, 16777215);
+                DebugScreen.this.fontRenderer.drawStringWithShadow("this.currentTargetedPlayer = " + this.currentTargetedPlayerInfo, 0.0F, (float) y + 20, 16777215);
             }
 
             @Override

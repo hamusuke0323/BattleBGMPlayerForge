@@ -32,14 +32,6 @@ public abstract class SoundManagerMixin implements SoundManagerInvoker {
     @Final
     private List<String> pausedChannels;
 
-    @Shadow
-    public abstract void stopSound(ISound sound);
-
-    @Override
-    public final void stop(ISound soundInstance) {
-        this.stopSound(soundInstance);
-    }
-
     @Override
     public final void pause(ISound soundInstance) {
         if (this.loaded) {
