@@ -175,6 +175,11 @@ public final class BattleBGMPlayerClient {
     }
 
     @SubscribeEvent
+    public void onPlayerChangedDimension(final PlayerEvent.PlayerChangedDimensionEvent event) {
+        this.resetBattleMusic();
+    }
+
+    @SubscribeEvent
     public void onTickEnd(final TickEvent.ClientTickEvent event) {
         if (!mc.isGamePaused() && event.phase == TickEvent.Phase.END) {
             if (this.tickCount++ >= 20) {
